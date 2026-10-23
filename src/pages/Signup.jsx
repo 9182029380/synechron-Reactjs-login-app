@@ -1,51 +1,65 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import {
+    validateEmail,
+    getPasswordError,
+} from "../utils/validation";
 
 function Signup() {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] =
-        useState("");
-    const [error, setError] = useState("");
+    const [form, setForm] = useState({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+    });
 
+    const [error, setError] = useState("");
     const { signup } = useAuth();
     const navigate = useNavigate();
+
+    function handleChange(event) {
+        setForm({
+            ...form,
+            [event.target.name]: event.target.value,
+        });
+    }
 
     function handleSubmit(event) {
         event.preventDefault();
         setError("");
 
         if (
-            !name.trim() ||
-            !email.trim() ||
-            !password ||
-            !confirmPassword
+            !form.name.trim() ||
+            !form.email.trim() ||
+            !form.password ||
+            !form.confirmPassword
         ) {
-            setError("Please fill in all fields.");
+            setError("All fields are required.");
             return;
         }
 
-        if (!/\S+@\S+\.\S+/.test(email)) {
-            setError("Please enter a valid email.");
+        if (!validateEmail(form.email)) {
+            setError("Please enter a valid email address.");
             return;
         }
 
-        if (password.length < 6) {
-            setError("Password must have at least 6 characters.");
+        const passwordError = getPasswordError(form.password);
+
+        if (passwordError) {
+            setError(passwordError);
             return;
         }
 
-        if (password !== confirmPassword) {
+        if (form.password !== form.confirmPassword) {
             setError("Passwords do not match.");
             return;
         }
 
         const result = signup(
-            name.trim(),
-            email.trim().toLowerCase(),
-            password
+            form.name,
+            form.email,
+            form.password
         );
 
         if (!result.success) {
@@ -53,58 +67,69 @@ function Signup() {
             return;
         }
 
-        navigate("/dashboard", { replace: true });
+        navigate("/user-dashboard", { replace: true });
     }
 
     return (
         <div className="auth-page">
             <div className="auth-card">
-                <h1>Create Account</h1>
+                <h1>Student Registration</h1>
                 <p className="subtitle">
-                    Register to access your dashboard.
+                    Create an account to access training programs.
                 </p>
 
-                {error && <div className="error">{error}</div>}
+                {error && <div className="error" role="alert">{error}</div>}
 
                 <form onSubmit={handleSubmit}>
                     <label htmlFor="name">Full Name</label>
                     <input
                         id="name"
-                        type="text"
-                        placeholder="Enter your name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                        placeholder="Enter full name"
+                        autoComplete="name"
+                        required
                     />
 
-                    <label htmlFor="signup-email">Email</label>
+                    <label htmlFor="email">Email</label>
                     <input
-                        id="signup-email"
+                        id="email"
+                        name="email"
                         type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="Enter email"
+                        autoComplete="email"
+                        required
                     />
 
-                    <label htmlFor="signup-password">Password</label>
+                    <label htmlFor="password">Password</label>
                     <input
-                        id="signup-password"
+                        id="password"
+                        name="password"
                         type="password"
-                        placeholder="Minimum 6 characters"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={form.password}
+                        onChange={handleChange}
+                        placeholder="At least 8 characters"
+                        autoComplete="new-password"
+                        required
                     />
 
-                    <label htmlFor="confirm-password">
-                        Confirm Password
-                    </label>
+                    <p className="field-hint">
+                        Use uppercase, lowercase, a number, and a special character.
+                    </p>
+
+                    <label htmlFor="confirmPassword">Confirm Password</label>
                     <input
-                        id="confirm-password"
+                        id="confirmPassword"
+                        name="confirmPassword"
                         type="password"
-                        placeholder="Re-enter your password"
-                        value={confirmPassword}
-                        onChange={(e) =>
-                            setConfirmPassword(e.target.value)
-                        }
+                        value={form.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Confirm password"
+                        autoComplete="new-password"
+                        required
                     />
 
                     <button className="primary-button" type="submit">
@@ -113,7 +138,11 @@ function Signup() {
                 </form>
 
                 <p className="auth-footer">
-                    Already registered? <Link to="/login">Login</Link>
+                    Already registered? <Link to="/user-login">Login</Link>
+                </p>
+
+                <p className="auth-footer">
+                    <Link to="/">Back to Home</Link>
                 </p>
             </div>
         </div>
